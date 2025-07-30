@@ -1,5 +1,6 @@
-from fastapi import APIRouter, status, Query
+from fastapi import APIRouter, status, Query, Request
 from fastapi.exceptions import HTTPException
+from fastapi.responses import HTMLResponse
 from sqlmodel import select
 from uuid import UUID
 
@@ -8,17 +9,22 @@ from typing import Annotated
 from src.todos.models import Todo, TodoPublic, TodoCreate, TodoUpdate
 
 from src.database import SessionDep
+from src.config import templates
 
 
 todo_router = APIRouter()
 
 
-@todo_router.get("/", response_model=list[TodoPublic])
-async def todos_get_all(session: SessionDep,
+@todo_router.get("/", response_class=HTMLResponse)
+async def todos_get_all(request: Request,
+                        session: SessionDep,
                         offset: int = 0,
                         limit: Annotated[int, Query(le=100)] = 100,):
     todos = session.exec(select(Todo).offset(offset).limit(limit)).all()
-    return todos
+
+    return templates.TemplateResponse(
+        request=request, name="todo.html", context={"todos": todos}
+    )
 
 
 @todo_router.post(

@@ -1,5 +1,4 @@
 from fastapi import FastAPI, Request
-from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
@@ -9,6 +8,7 @@ from src.todos.routes import todo_router
 # from src.heroes.routes import heroes_router
 
 from .database import create_db_and_tables
+from .config import templates
 
 
 origins = [
@@ -21,7 +21,7 @@ origins = [
 version = "v1"
 
 app = FastAPI(
-    version=version,
+    # version=version,
 )
 
 
@@ -33,10 +33,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-app.include_router(todo_router, prefix=f"/api/{version}/todos", tags=['todos'])
+app.include_router(todo_router, prefix="/todos", tags=['todos'])
 # app.include_router(greet_router, prefix="/greet", tags=['Greet'])
 # app.include_router(heroes_router, prefix="/hero", tags=['Heroes'])
 

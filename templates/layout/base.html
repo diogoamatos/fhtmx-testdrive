@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en" class="h-100">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <meta name="generator" content="Hugo 0.84.0">
+  <title>FastAPI + HTMX</title>
+
+
+  <!-- Bootstrap core CSS -->
+  <link href="{{ url_for('static', path='/css/bootstrap.min.css') }}" rel="stylesheet">
+
+  <style>
+    .bd-placeholder-img {
+      font-size: 1.125rem;
+      text-anchor: middle;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      user-select: none;
+    }
+
+    @media (min-width: 768px) {
+      .bd-placeholder-img-lg {
+        font-size: 3.5rem;
+      }
+    }
+  </style>
+
+  <!-- Custom styles for this template -->
+  {% block additional_styles %}
+  {% endblock %}
+</head>
+
+<body class="{% block bodyclass %}{% endblock %}">
+
+  <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
+    {% block header_nav %}
+    {% endblock %}
+
+    {% block main %}
+    {% endblock %}
+
+    {% block footer %}
+    {% endblock %}
+  </div>
+
+  <script src="{{ url_for('static', path='/js/bootstrap.min.js') }}"></script>
+  {%block additional_scripts %}
+  {% endblock %}
+</body>
+
+</html>
