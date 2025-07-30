@@ -1,14 +1,13 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
 
 from src.todos.routes import todo_router
+from src.routes import root_router
 # from src.greet.routes import greet_router
 # from src.heroes.routes import heroes_router
 
 from .database import create_db_and_tables
-from .config import templates
 
 
 origins = [
@@ -35,7 +34,8 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-app.include_router(todo_router, prefix="/todos", tags=['todos'])
+app.include_router(todo_router, prefix="/todos", tags=['Todo'])
+app.include_router(root_router, prefix="", tags=['Pages'])
 # app.include_router(greet_router, prefix="/greet", tags=['Greet'])
 # app.include_router(heroes_router, prefix="/hero", tags=['Heroes'])
 
@@ -44,11 +44,3 @@ app.include_router(todo_router, prefix="/todos", tags=['todos'])
 def on_startup():
     print("database create db and table on startup")
     create_db_and_tables()
-
-
-@app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request):
-    context = {}
-    return templates.TemplateResponse(
-        request=request, name="index.html", context=context
-    )

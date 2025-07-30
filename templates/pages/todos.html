@@ -1,0 +1,37 @@
+{% extends "base/base.html" %}
+
+{% block additional_styles %}
+<link href="{{ url_for('static', path='/css/cover.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block bodyclass %} d-flex h-100 text-center text-white bg-dark {% endblock %}
+
+{% block header_nav %}
+{% include "includes/header.html" %}
+{% endblock %}
+
+{% block main %}
+<!-- <div hx-get="/todo/list" hx-trigger="load" > -->
+<!--    -->
+<!-- </div> --> 
+<main>
+{% for todo in todos %}
+<div class="card mb-4" id="todo-{{todo.id}}">
+  <div class="card-body">
+    <div class="input-group d-flex p-2">
+      <input style="width: 100" type="text" name="todo" value="{{ todo.text }}">
+    </div>
+    <div class="d-flex p-2 justify-content-center">
+      <button type="button ml-2 mr-2" class="btn btn-outline-success">SAVE</button>
+      <button type="button ml-2 mr-2" class="btn btn-outline-primary">DONE</button>
+      <button type="button ml-2 mr-2" class="btn btn-outline-danger">REMOVE</button>
+    </div>
+  </div>
+</div>
+</main>
+{% endfor %}
+{% endblock %}
+
+{% block footer %}
+{% include "includes/footer.html" %}
+{% endblock %}
