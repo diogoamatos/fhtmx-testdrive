@@ -1,20 +1,17 @@
-from fastapi import APIRouter, status, Query, Request
+from fastapi import APIRouter, Query, Request, Header, Form, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
 from sqlmodel import select
 from uuid import UUID
 
-from typing import Annotated
+from typing import Annotated, Union
 
 from src.todos.models import Todo, TodoPublic, TodoCreate, TodoUpdate
-
 from src.database import SessionDep
-
 from src.config import templates
 
 
 todo_router = APIRouter()
-
 
 
 @todo_router.get("/", response_class=HTMLResponse)
@@ -26,19 +23,26 @@ async def todos_index(
 ):
     todos = session.exec(select(Todo).offset(offset).limit(limit)).all()
     return templates.TemplateResponse(
-        request=request, name="pages/todos.html", context={"todos": todos}
+        request=request, name="todos.html", context={"todos": todos}
     )
 
 
 @todo_router.get("/list", response_model=list[Todo])
-async def todos_get_all(
+async def todos_list(
     request: Request,
     session: SessionDep,
     offset: int = 0,
     limit: Annotated[int, Query(le=100)] = 100,
+    hx_request: Annotated[Union[str, None], Header()] = None
 ):
     todos = session.exec(select(Todo).offset(offset).limit(limit)).all()
-    return todos
+    if hx_request:
+        return templates.TemplateResponse(
+            request=request,
+            name="partials/todo_list.html",
+            context={"todos": todos},
+        )
+    return {"todos": todos}
 
 
 @todo_router.post(
@@ -46,12 +50,26 @@ async def todos_get_all(
     response_model=TodoPublic,
     status_code=status.HTTP_201_CREATED,
 )
-async def todo_create(todo: TodoCreate, session: SessionDep):
-    db_todo = Todo.model_validate(todo)
-    session.add(db_todo)
-    session.commit()
-    session.refresh(db_todo)
-    return db_todo
+async def todo_create(
+    request: Request,
+    todo: Annotated[str, Form()],
+    session: SessionDep,
+    hx_request: Annotated[Union[str, None], Header()] = None
+):
+    # for item in request:
+    #     print(item)
+    if todo:
+        db_todo = Todo.model_validate({"text": todo})
+        # session.add(db_todo)
+        # session.commit()
+        # session.refresh(db_todo)
+        if hx_request:
+            return templates.TemplateResponse(
+                request=request,
+                name="partials/todo_item.html",
+                context={"todo": db_todo},
+            )
+    return {}
 
 
 @todo_router.get("/{todo_id}", response_model=TodoPublic)
