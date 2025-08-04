@@ -1,15 +1,16 @@
-from fastapi import APIRouter, Query, Request, Header, Form, status
-from fastapi.exceptions import HTTPException
-from fastapi.responses import HTMLResponse
-from sqlmodel import select
+from os import stat
+from typing import Annotated, Union
 from uuid import UUID
 
-from typing import Annotated, Union
+from fastapi import APIRouter, Form, Header, Query, Request, status
+from fastapi.exceptions import HTTPException
+from fastapi.responses import HTMLResponse, JSONResponse
+from sqlalchemy import True_
+from sqlmodel import select
 
-from src.todos.models import Todo, TodoPublic, TodoCreate, TodoUpdate
-from src.database import SessionDep
 from src.config import templates
-
+from src.database import SessionDep
+from src.todos.models import Todo, TodoCreate, TodoPublic, TodoUpdate
 
 todo_router = APIRouter()
 
@@ -33,16 +34,16 @@ async def todos_list(
     session: SessionDep,
     offset: int = 0,
     limit: Annotated[int, Query(le=100)] = 100,
-    hx_request: Annotated[Union[str, None], Header()] = None
+    hx_request: Annotated[Union[str, None], Header()] = None,
 ):
     todos = session.exec(select(Todo).offset(offset).limit(limit)).all()
     if hx_request:
         return templates.TemplateResponse(
             request=request,
             name="partials/todo_list.html",
-            context={"todos": todos},
+            context={"todos": reversed(todos)},
         )
-    return {"todos": todos}
+    return {"todos": reversed(todos)}
 
 
 @todo_router.post(
@@ -54,15 +55,15 @@ async def todo_create(
     request: Request,
     todo: Annotated[str, Form()],
     session: SessionDep,
-    hx_request: Annotated[Union[str, None], Header()] = None
+    hx_request: Annotated[Union[str, None], Header()] = None,
 ):
     # for item in request:
     #     print(item)
     if todo:
         db_todo = Todo.model_validate({"text": todo})
-        # session.add(db_todo)
-        # session.commit()
-        # session.refresh(db_todo)
+        session.add(db_todo)
+        session.commit()
+        session.refresh(db_todo)
         if hx_request:
             return templates.TemplateResponse(
                 request=request,
@@ -83,7 +84,7 @@ async def todo_read(todo_id: UUID, session: SessionDep):
     return todo
 
 
-@todo_router.patch("/{todo_id}", response_model=TodoPublic)
+@todo_router.patch("/{todo_id}/update", response_model=TodoPublic)
 async def todo_update(todo_id: UUID, todo: TodoUpdate, session: SessionDep):
     todo_db = session.get(Todo, todo_id)
     if not todo_db:
@@ -99,9 +100,10 @@ async def todo_update(todo_id: UUID, todo: TodoUpdate, session: SessionDep):
     return todo_db
 
 
-@todo_router.delete("/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
+@todo_router.delete("/{todo_id}/delete", status_code=status.HTTP_204_NO_CONTENT)
 async def todo_delete(todo_id: UUID, session: SessionDep):
     todo = session.get(Todo, todo_id)
+    print("vai deletar algo?")
     if not todo:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -109,4 +111,26 @@ async def todo_delete(todo_id: UUID, session: SessionDep):
         )
     session.delete(todo)
     session.commit()
-    return {"ok": True}
+    return JSONResponse(status_code=status.HTTP_200_OK, content="")
+
+
+@todo_router.post("/{todo_id}/toggle")
+async def todo_toggle(request: Request, todo_id: UUID, session: SessionDep):
+    todo_db = session.get(Todo, todo_id)
+    if not todo_db:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Todo not found",
+        )
+    if todo_db.done:
+        todo_db.done = False
+    else:
+        todo_db.done = True
+    session.add(todo_db)
+    session.commit()
+    session.refresh(todo_db)
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/todo_item.html",
+        context={"todo": todo_db},
+    )

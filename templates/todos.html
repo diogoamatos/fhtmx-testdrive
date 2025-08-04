@@ -12,10 +12,14 @@
 
 {% block main %}
 <main>
+  <div class="container mb-4 mt-4" style="">
   <form hx-post="{{ url_for('todo_create') }}" hx-target="#todo-list" hx-swap="afterbegin" hx-on:htmx:after-request="this.reset()">
-    <input type="text" name="todo" placeholder="What do i have to do today?...">
-    <button type="submmit" class="btn btn-outline-success">SAVE</button>
+     <div class="d-flex">
+       <input class="p-2 flex-fill " type="text" name="todo" placeholder="What do i have to do today?...">
+       <button type="submmit" class="p-2 m-2btn btn-outline-success">SAVE</button>
+     </div> 
   </form>
+  </div>
 <div id="todo-list" hx-get="/todos/list" hx-trigger="load" hx-swap="innerHTML">
 </div> 
 </main>
