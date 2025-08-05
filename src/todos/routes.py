@@ -5,7 +5,6 @@ from uuid import UUID
 from fastapi import APIRouter, Form, Header, Query, Request, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
-from sqlalchemy import True_
 from sqlmodel import select
 
 from src.config import templates
@@ -85,19 +84,28 @@ async def todo_read(todo_id: UUID, session: SessionDep):
 
 
 @todo_router.patch("/{todo_id}/update", response_model=TodoPublic)
-async def todo_update(todo_id: UUID, todo: TodoUpdate, session: SessionDep):
+async def todo_update(
+    request: Request,
+    todo_id: UUID,
+    text: Annotated[str, Form()],
+    session: SessionDep,
+):
     todo_db = session.get(Todo, todo_id)
+    print(f"texto recebido: {text}")
     if not todo_db:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Todo not found",
         )
-    todo_data = todo.model_dump(exclude_unset=True)
-    todo_db.sqlmodel_update(todo_data)
+    todo_db.text = text
     session.add(todo_db)
     session.commit()
     session.refresh(todo_db)
-    return todo_db
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/todo_item.html",
+        context={"todo": todo_db},
+    )
 
 
 @todo_router.delete("/{todo_id}/delete", status_code=status.HTTP_204_NO_CONTENT)
